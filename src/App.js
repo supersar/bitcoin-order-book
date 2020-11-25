@@ -1,23 +1,56 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { fetchBooks } from './api/exchanges';
+import Book from './components/Book';
 
-function App() {
+const App = () => {
+
+  const [state, setState] = useState({
+    loading: true,
+    asks: [],
+    bids: [],
+    error: false,
+    last_refresh: null,
+  });
+
+  useEffect(() => {
+
+    const fetchData = async () => {
+      const d = new Date();
+      const timestamp = `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+      const result = await fetchBooks();
+      if (result === false) {
+        setState({
+          loading: false,
+          asks: [],
+          bids: [],
+          error: true,
+          lastRefresh: null,
+        });
+      } else {
+        setState({
+          loading: false,
+          asks: result.sortedAsks,
+          bids: result.sortedBids,
+          error: false,
+          lastRefresh: timestamp,
+        });
+      }
+    };
+    fetchData();
+    
+    // refresh every 5 seconds
+    const interval = setInterval(() => {
+      fetchData();
+     }, 5000);
+     return () => clearInterval(interval);
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Book
+        state = {state}
+      />
     </div>
   );
 }
